@@ -1,6 +1,7 @@
 import sys
 import os
 from PyQt4 import QtCore, QtGui, uic
+from PyQt4.QtGui import QMessageBox
 import sys
 from PyQt4.QtGui import *
 from PySide import QtCore, QtGui
@@ -33,7 +34,6 @@ def load_ui(file_name, where=None):
 
     return ui
 
-
     #------------------------------------------------------- Main Class ------------------------------------------------------------#
 file_array = []
 file_array_bis = []
@@ -41,10 +41,17 @@ X_standardized = 0
 X_paa = 0
 X_sax = 0
 val = 0
+car=0
+a=0
+b=0
+c=0
 level1 = []
+
 
 character_tab = ['a', 'b', 'c', 'd', 'e', 'f',
                  'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o', 'p']
+
+
 class MainClass(QtGui.QWidget):
 
     def __init__(self, parent=None):
@@ -61,7 +68,8 @@ class MainClass(QtGui.QWidget):
         layout.addWidget(main_widget)
         self.setGeometry(300, 100, 850, 550)
         self.setLayout(layout)
-
+        
+        
         self.browse = self.findChild(QtGui.QPushButton, 'browse')
         self.browse.clicked.connect(self.BrowseFunction)
 
@@ -142,12 +150,6 @@ class MainClass(QtGui.QWidget):
                 standardscaler = StandardScaler(epsilon=1e-2)
                 X_standardized = standardscaler.transform(X)
 
-                paa = PAA(window_size=None, output_size=5, overlapping=True)
-                X_paa = paa.transform(X_standardized)
-
-                sax = SAX(n_bins=5, quantiles='gaussian')
-                X_sax = sax.transform(X_paa)
-
         else:
             print 13
 
@@ -156,34 +158,56 @@ class MainClass(QtGui.QWidget):
     # 		print X_standardized
     # 		a= self.nbstandar.text()
     def stand(self):
-
-        print X_standardized[val]
+        global val
+       
+        nbs = self.nbstandar.text()
+        try:
+            val = int(nbs)
+            print X_standardized[val]
+        except ValueError:
+           QMessageBox.warning(None, 'Warning', 'Please Enter an integer',
+            QMessageBox.Ok)
+        
+            # QMessageBox.Warning(None, 'ERROR', 'Installation complete.')
+           
 
     def visstand(self):
-        global val
-        a = self.nbstandar.text()
-        try:
-            val = int(a)
+        
+       
             plt.show(
                 plt.plot(X_standardized[val], color="red", linewidth=1.0, linestyle="-"))
-        except ValueError:
-            print("That's not an int!")
+      
 
 # PAA
     def PAA(self):
-        print X_paa[2]
+        global X_paa
+        global b
+        global a
+        a = int(self.paaline.text())
+        b = int(self.nbpaa.text())
+        paa = PAA(window_size=None, output_size=a, overlapping=True)
+        X_paa = paa.transform(X_standardized)
+        print X_paa[b]
+        print "************************"
 
     def visPAA(self):
         plt.show(plot_paa(
-            X_standardized[1], window_size=None, output_size=5, overlapping=True, marker='o'))
+            X_standardized[b], window_size=None, output_size=a, overlapping=True, marker='o'))
 # SAX
 
     def SAX(self):
-		
-        print X_sax[2]
+        global X_sax
+        global car
+        global b
+        car = int(self.saxline.text())
+        c = int(self.nbsax.text())
+        sax = SAX(n_bins=car, quantiles='gaussian')
+        X_sax = sax.transform(X_paa)
+        print X_sax[c]
+        print "******************"
 
     def visSAX(self):
-        plt.show(plot_sax(X_paa[1], n_bins=4, quantiles='gaussian'))
+        plt.show(plot_sax(X_paa[c], n_bins=4, quantiles='gaussian'))
     """
 	Main code of apriori 
 	"""
@@ -213,44 +237,45 @@ class MainClass(QtGui.QWidget):
     # apriori
 
     def apriori(self):
-		car_dic = dict()
+        global car
+        car_dic = dict()
 
-		car = int(self.saxline.text())
-		for i in range(car):
-			car_dic[character_tab[i]] = 0
-			level1.append(character_tab[i])
-		# car_dic = {'a': 0, 'b': 0, 'c': 0, 'd': 0, 'e': 0}
-		# level1 = ['a', 'b', 'c', 'd', 'e']
+        
+        for i in range(car):
+            car_dic[character_tab[i]] = 0
+            level1.append(character_tab[i])
+        # car_dic = {'a': 0, 'b': 0, 'c': 0, 'd': 0, 'e': 0}
+        # level1 = ['a', 'b', 'c', 'd', 'e']
 
-		min_support = float(self.aprioriline.text())
-		a_priory_tab = {}
-		########### GEN ###########
-		level_dict = dict()
-		while True:
-					# 1 - count
-			self.car_counting(X_sax, car_dic)
-			# print(car_dic)
-			# 2 - occurence dividing
-			for key in car_dic:
-				level_dict[key] = car_dic[key]/88.0
-			print(level_dict)
-			# 3 - minimum support deleting
-			a_priory_tab = copy.deepcopy(level_dict)
-			self.minimum_support(level_dict, min_support)
-			print "*****************************************"
-			# print(level_dict)
+        min_support = float(self.aprioriline.text())
+        a_priory_tab = {}
+        ########### GEN ###########
+        level_dict = dict()
+        while True:
+                                # 1 - count
+            self.car_counting(X_sax, car_dic)
+            # print(car_dic)
+            # 2 - occurence dividing
+            for key in car_dic:
+                level_dict[key] = car_dic[key]/88.0
+            print(level_dict)
+            # 3 - minimum support deleting
+            a_priory_tab = copy.deepcopy(level_dict)
+            self.minimum_support(level_dict, min_support)
+            print "*****************************************"
+            # print(level_dict)
 
-			if len(level_dict) <= 0:
-				break
-			else:
-				# 4 - merge
-				car_dic = self.merge_key(level_dict, level1)
-				print(level_dict)
-				level_dict = {}
+            if len(level_dict) <= 0:
+                break
+            else:
+                # 4 - merge
+                car_dic = self.merge_key(level_dict, level1)
+                print(level_dict)
+                level_dict = {}
 
-		# Printing the last element
-		print('The last tab \n')
-		print(a_priory_tab)
+        # Printing the last element
+        print('The last tab \n')
+        print(a_priory_tab)
 
 #-------------------------------------------------------------------------------------------------------------------------------#
 
